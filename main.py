@@ -70,10 +70,19 @@ async def main_menu(callback: types.CallbackQuery):
     kb = [
         [types.InlineKeyboardButton(text='Вернуться в начало', callback_data='back_to_start'), types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')],
         [types.InlineKeyboardButton(text='Создать задачу', callback_data='create_task')],
-        [types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_tasks'), types.InlineKeyboardButton(text='Список завершенных задач', callback_data='completed_task_list')]
+        [types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_active_tasks'), types.InlineKeyboardButton(text='Список завершенных задач', callback_data='completed_task_list')]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     text_data = f'Вы находитесь в меню, ниже кнопки для удобной навигации'
+    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'list_of_active_tasks')
+async def f_list_of_active_tasks(callback: types.CallbackQuery):
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    user_id = callback.from_user.id
+    tasks = await get_active_task_list(user_id)
+    text_data = await get_task_list(tasks)
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
 #=====================================================================================# Конец кода основанного на F.Data
