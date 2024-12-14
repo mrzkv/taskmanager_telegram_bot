@@ -3,10 +3,16 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram import types, F, Bot, Dispatcher
+from aiogram.fsm import state
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 from message_commands import *
 from bot_token import *
+
 dp = Dispatcher()
 print('Format of info about users is Full_name:tgID')
+
+
 
 #Запуск бота командой /start
 @dp.message(Command('start'))
@@ -26,6 +32,10 @@ async def start_bot(message: types.Message):
     photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
     text_data = f"\n<b>Здравствуйте, {html.escape(message.from_user.full_name)}!</b>\nНиже кнопки которые вам понадобятся\n"
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+
+class Addtask(StatesGroup):
+    addtask = State()
+
 
 #=====================================================================================# Начало кода основанного на F.Data
 
@@ -66,7 +76,8 @@ async def cmdlist(callback: types.CallbackQuery):
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'main_menu' )
-async def main_menu(callback: types.CallbackQuery):
+async def main_menu(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     kb = [
         [types.InlineKeyboardButton(text='Вернуться в начало', callback_data='back_to_start'), types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')],
         [types.InlineKeyboardButton(text='Создать задачу', callback_data='create_task'), types.InlineKeyboardButton(text='Удалить задачу', callback_data='delete_task')],
@@ -93,6 +104,27 @@ async def f_list_of_active_tasks(callback: types.CallbackQuery):
     tasks = await get_active_task_list(user_id)
     text_data = await get_task_list(tasks)
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'create_task')
+async def f_add_task(callback: types.CallbackQuery, state: FSMContext):
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    user_id = callback.from_user.id
+    text_data = "Введите название задачи"
+    await callback.message.edit_caption(caption=text_data,reply_markup=keyboard)
+    await state.set_state(Addtask.addtask)
+
+@dp.message(Addtask.addtask)
+async def f_add_task_step_2(message: types.Message, state: FSMContext):
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]])
+    msg = message.text
+    user_id = message.from_user.id
+    await add_task_to_database(msg, user_id)
+    await state.clear()
+    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    text_data = f'Ваша задача <b>"{html.escape(msg)}"</b> была добавлена'
+    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+
 
 #=====================================================================================# Конец кода основанного на F.Data
 
