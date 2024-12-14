@@ -1,6 +1,4 @@
 import aiosqlite
-from aiosqlite import connect
-
 
 # Функция для получения списка завершенных задач из базы данных. Вызывается командой /clist
 async def get_completed_task_list(user_id):

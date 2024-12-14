@@ -1,6 +1,4 @@
 import re
-from tkinter.constants import FALSE
-
 
 # Валидация данных.
 async def isvalid(command, type_of_command):
