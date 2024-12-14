@@ -69,7 +69,7 @@ async def mark_task_in_db(msg, user_id):
     # Валидация данных №2(поиск в базе такой задачи)/ если успешно то задача маркируется 0 -> 1
     tasks = await get_active_task_list(user_id)
     if len(tasks) == 0:
-        text_data = 'Ваш список задач пуст. Вы можете создать новую используя /add'
+        text_data = 'Ваш список задач пуст. Вы можете создать новую используя /add или кнопки'
         return text_data
 
     id_of_tasks = await get_id_task_list(user_id)
@@ -79,6 +79,6 @@ async def mark_task_in_db(msg, user_id):
 
     task_for_marked = id_of_tasks[int(msg)-1]
     await delete_task(task_for_marked)
-    text_data = f'Задача "{tasks[int(msg)-1]}" под номером {msg} была завершена.\nЧтобы увидеть список завершенных задач /clist'
+    text_data = f'Задача "{tasks[int(msg)-1]}" под номером {msg} была завершена.\nЧтобы увидеть список завершенных задач /clist или использовать кнопки'
     return text_data
 

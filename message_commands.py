@@ -33,7 +33,7 @@ async def get_task_list(tasks):
         string_tasks += '</b>'
         text_data = f'Список ваших задач:\n{string_tasks}'
     else:
-        text_data = 'Ваш список задач пуст. Вы можете создать новую используя /add'
+        text_data = 'Ваш список задач пуст. Вы можете создать новую используя /add.\nЛибо использовать кнопки'
 
     return text_data
 

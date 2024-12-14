@@ -55,7 +55,7 @@ async def admin_list(callback: types.CallbackQuery):
 async def information(callback: types.CallbackQuery):
     kb = [[types.InlineKeyboardButton(text="Вернуться назад", callback_data="back_to_start")]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    text_data = '1. Запуск первой бета-версии: 13.12.2024'
+    text_data = '1. Запуск первой адекватной бета-версии: 13.12.2024\n2. Конец бета-версии 14.12.24'
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
 # Возвращение пользователя в начальное меню
@@ -81,7 +81,7 @@ async def main_menu(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     kb = [
         [types.InlineKeyboardButton(text='Вернуться в начало', callback_data='back_to_start'), types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')],
-        [types.InlineKeyboardButton(text='Создать задачу', callback_data='create_task'), types.InlineKeyboardButton(text='Удалить задачу', callback_data='delete_task')],
+        [types.InlineKeyboardButton(text='Создать задачу', callback_data='create_task'), types.InlineKeyboardButton(text='Завершить задачу', callback_data='delete_task')],
         [types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_active_tasks'), types.InlineKeyboardButton(text='Список завершенных задач', callback_data='list_of_completed_tasks')]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
@@ -116,13 +116,13 @@ async def f_add_task(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.message(Addtask.addtask)
 async def f_add_task_step_2(message: types.Message, state: FSMContext):
+    await state.clear()
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu'), types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_active_tasks')]
     ])
     msg = message.text
     user_id = message.from_user.id
     await add_task_to_database(msg, user_id)
-    await state.clear()
     photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
     text_data = f'Ваша задача <b>"{html.escape(msg)}"</b> была добавлена. Чтобы увидеть список задач нажмите кнопку ниже.'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
