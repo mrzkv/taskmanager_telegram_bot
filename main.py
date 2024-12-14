@@ -3,9 +3,9 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram import types, F, Bot, Dispatcher
-from aiogram.fsm import state
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from admin_functions import *
 from message_commands import *
 from bot_token import *
 
@@ -38,6 +38,9 @@ class Addtask(StatesGroup):
 
 class Deltask(StatesGroup):
     deltask = State()
+
+class AdminNews(StatesGroup):
+    adm_newsletter = State()
 #=====================================================================================# Начало кода основанного на F.Data
 
 # Список админов, когда человек нажал на кнопку 'Список Админов👑'
@@ -141,13 +144,13 @@ async def f_del_task_step_2(message: types.Message, state: FSMContext):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu'), types.InlineKeyboardButton(text='Список завершенных задач.', callback_data='list_of_completed_tasks')]])
     msg = message.text
     task_id = await isvalid(msg, 'fdelete')
-    if task_id != False:
+    if task_id:
         user_id = message.from_user.id
         text_data = await mark_task_in_db(task_id, user_id)
         if '/clist' in text_data:
             text_data = text_data[:-7]
             text_data += ". Воспользуйтесь кнопкой ниже"
-    elif task_id == False:
+    elif not task_id:
         text_data = f'Чтобы удалить задачу нужно ввести её номер, вы же ввели: {msg}'
     photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
@@ -194,6 +197,42 @@ async def get_clist(message: types.Message):
     await message.answer(text_data)
 
 #===================================================================================# Конец кода основанного на командах
+
+#===================================================================================# Админ-панель
+
+@dp.message( Command ("admin"))
+async def enter_admin_menu(message:types.Message):
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Войти в админ меню', callback_data='admin_menu')]])
+    photo_data, text_data = 'AgACAgIAAxkBAAIDQGddvnuopuYcJgHfzNGmBDCHFO2ZAAJH5zEbz43oStTOu4SkTrHEAQADAgADeQADNgQ', 'Войти в Админ-меню'
+    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'admin_menu')
+async def administration_menu(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    kb = [[types.InlineKeyboardButton(text='Статистика', callback_data='admin_stats'), types.InlineKeyboardButton(text='Рассылка', callback_data='admin_news')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    text_data = f'Здравствуйте, администратор <b>{html.escape(callback.from_user.full_name)}</b>.'
+    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'admin_stats')
+async def administration_statistics(callback: types.CallbackQuery):
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    await callback.message.edit_caption(caption=await get_admin_statistics(), reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'admin_news')
+async def admin_newsletter(callback: types.CallbackQuery, state: FSMContext):
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=([[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]))
+    await state.set_state(AdminNews.adm_newsletter)
+    await callback.message.edit_caption(caption='Введите сообщения для всеобщей рассылки',reply_markup=keyboard)
+
+@dp.message(AdminNews.adm_newsletter)
+async def admin_newsletter_step2(message: types.Message, state: FSMContext):
+    await state.clear()
+    msg = message.text
+    await message.answer(msg)
+
+#===================================================================================# Конец админ-панели
 
 # Если была введена неверная команда.
 @dp.message(F.text[0] == '/')

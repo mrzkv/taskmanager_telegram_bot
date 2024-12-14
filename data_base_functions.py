@@ -1,4 +1,5 @@
 import aiosqlite
+from aiosqlite import connect
 
 
 # Функция для получения списка завершенных задач из базы данных. Вызывается командой /clist
@@ -54,6 +55,15 @@ async def delete_task(id_of_tasks):
     await connect.commit()
     await cursor.close()
 
+# Подсчет кол-ва пользователей
+async def get_users_count():
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    user_count = await cursor.execute('SELECT COUNT(*) FROM users')
+    user_count = await user_count.fetchone()
+    await connect.commit()
+    await cursor.close()
+    return user_count[0]
 
 # Добавление задач в базу данных Sqlite.
 async def add_task_to_database(task, user_id):
