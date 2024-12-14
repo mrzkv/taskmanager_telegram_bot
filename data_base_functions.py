@@ -79,6 +79,6 @@ async def mark_task_in_db(msg, user_id):
 
     task_for_marked = id_of_tasks[int(msg)-1]
     await delete_task(task_for_marked)
-    text_data = f'Задача "{tasks[int(msg)-1]}" под номером {msg} была завершена.\nУвидеть список завершенных задач /clist'
+    text_data = f'Задача "{tasks[int(msg)-1]}" под номером {msg} была завершена.\nЧтобы увидеть список завершенных задач /clist'
     return text_data
 

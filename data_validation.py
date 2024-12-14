@@ -1,6 +1,10 @@
 import re
+from tkinter.constants import FALSE
+
+
 # Валидация данных.
 async def isvalid(command, type_of_command):
+    command = str(command)
     # Проверка команды /add
     if type_of_command == "add":
         # Регулярное выражение для проверки команды. (УЖАС)
@@ -23,5 +27,10 @@ async def isvalid(command, type_of_command):
         if match:
             return match.group(1)
         return False
+    elif type_of_command == 'fdelete':
+        if command.isdigit():
+            return command
+        else:
+            return False
     else:
         return False

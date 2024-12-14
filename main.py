@@ -36,7 +36,8 @@ async def start_bot(message: types.Message):
 class Addtask(StatesGroup):
     addtask = State()
 
-
+class Deltask(StatesGroup):
+    deltask = State()
 #=====================================================================================# Начало кода основанного на F.Data
 
 # Список админов, когда человек нажал на кнопку 'Список Админов👑'
@@ -109,22 +110,47 @@ async def f_list_of_active_tasks(callback: types.CallbackQuery):
 async def f_add_task(callback: types.CallbackQuery, state: FSMContext):
     kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    user_id = callback.from_user.id
-    text_data = "Введите название задачи"
+    text_data = "Введите название задачи которую хотите добавить"
     await callback.message.edit_caption(caption=text_data,reply_markup=keyboard)
     await state.set_state(Addtask.addtask)
 
 @dp.message(Addtask.addtask)
 async def f_add_task_step_2(message: types.Message, state: FSMContext):
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]])
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu'), types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_active_tasks')]
+    ])
     msg = message.text
     user_id = message.from_user.id
     await add_task_to_database(msg, user_id)
     await state.clear()
     photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
-    text_data = f'Ваша задача <b>"{html.escape(msg)}"</b> была добавлена'
+    text_data = f'Ваша задача <b>"{html.escape(msg)}"</b> была добавлена. Чтобы увидеть список задач нажмите кнопку ниже.'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
+@dp.callback_query( F.data == 'delete_task')
+async def f_del_task(callback: types.CallbackQuery, state: FSMContext):
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    text_data = "Введите номер задачи которую хотите завершить"
+    await callback.message.edit_caption(caption=text_data,reply_markup=keyboard)
+    await state.set_state(Deltask.deltask)
+
+@dp.message(Deltask.deltask)
+async def f_del_task_step_2(message: types.Message, state: FSMContext):
+    await state.clear()
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu'), types.InlineKeyboardButton(text='Список завершенных задач.', callback_data='list_of_completed_tasks')]])
+    msg = message.text
+    task_id = await isvalid(msg, 'fdelete')
+    if task_id != False:
+        user_id = message.from_user.id
+        text_data = await mark_task_in_db(task_id, user_id)
+        if '/clist' in text_data:
+            text_data = text_data[:-7]
+            text_data += ". Воспользуйтесь кнопкой ниже"
+    elif task_id == False:
+        text_data = f'Чтобы удалить задачу нужно ввести её номер, вы же ввели: {msg}'
+    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
 #=====================================================================================# Конец кода основанного на F.Data
 
