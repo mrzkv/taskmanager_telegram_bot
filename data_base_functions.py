@@ -90,3 +90,13 @@ async def mark_task_in_db(msg, user_id):
     text_data = f'Задача "{tasks[int(msg)-1]}" под номером {msg} была завершена.\nЧтобы увидеть список завершенных задач /clist или использовать кнопки'
     return text_data
 
+async def get_all_users_id():
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    all_ids = await cursor.execute('SELECT user_id FROM users')
+    all_ids = await all_ids.fetchall()
+    await cursor.close()
+    await connect.close()
+    return all_ids
+
+#

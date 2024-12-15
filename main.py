@@ -1,10 +1,12 @@
-from asyncio import run
+from asyncio import run, sleep
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram import types, F, Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from admin_functions import *
 from message_commands import *
 from bot_token import *
@@ -202,35 +204,55 @@ async def get_clist(message: types.Message):
 
 @dp.message( Command ("admin"))
 async def enter_admin_menu(message:types.Message):
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Войти в админ меню', callback_data='admin_menu')]])
-    photo_data, text_data = 'AgACAgIAAxkBAAIDQGddvnuopuYcJgHfzNGmBDCHFO2ZAAJH5zEbz43oStTOu4SkTrHEAQADAgADeQADNgQ', 'Войти в Админ-меню'
-    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+    if await isAdmin(message.from_user.id):
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Войти в админ меню', callback_data='admin_menu')]])
+        photo_data, text_data = 'AgACAgIAAxkBAAIDQGddvnuopuYcJgHfzNGmBDCHFO2ZAAJH5zEbz43oStTOu4SkTrHEAQADAgADeQADNgQ', 'Войти в Админ-меню'
+        await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+    else:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')]])
+        text_data = await wrong_admin(message.from_user.id, message.text, message.from_user.username)
+        photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+        await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'admin_menu')
 async def administration_menu(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
-    kb = [[types.InlineKeyboardButton(text='Статистика', callback_data='admin_stats'), types.InlineKeyboardButton(text='Рассылка', callback_data='admin_news')]]
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    text_data = f'Здравствуйте, администратор <b>{html.escape(callback.from_user.full_name)}</b>.'
-    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+    if await isAdmin(callback.from_user.id):
+        kb = [[types.InlineKeyboardButton(text='Статистика', callback_data='admin_stats'), types.InlineKeyboardButton(text='Рассылка', callback_data='admin_news')]]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        text_data = f'Здравствуйте, администратор <b>{html.escape(callback.from_user.full_name)}</b>.'
+        await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'admin_stats')
 async def administration_statistics(callback: types.CallbackQuery):
-    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    await callback.message.edit_caption(caption=await get_admin_statistics(), reply_markup=keyboard)
+    if await isAdmin(callback.from_user.id):
+        kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await callback.message.edit_caption(caption=await get_admin_statistics(), reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'admin_news')
 async def admin_newsletter(callback: types.CallbackQuery, state: FSMContext):
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=([[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]))
-    await state.set_state(AdminNews.adm_newsletter)
-    await callback.message.edit_caption(caption='Введите сообщения для всеобщей рассылки',reply_markup=keyboard)
+    await state.clear()
+    if await isAdmin(callback.from_user.id):
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=([[types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')]]))
+        await state.set_state(AdminNews.adm_newsletter)
+        await callback.message.edit_caption(caption='Введите сообщения для всеобщей рассылки',reply_markup=keyboard)
 
 @dp.message(AdminNews.adm_newsletter)
 async def admin_newsletter_step2(message: types.Message, state: FSMContext):
     await state.clear()
-    msg = message.text
-    await message.answer(msg)
+    if await isAdmin(message.from_user.id):
+        good_try = 0
+        all_ids = await get_all_users_id()
+        for user_id in all_ids:
+            try:
+                await message.send_copy(user_id[0])
+                good_try += 1
+                await sleep(0.1)
+            except:
+                continue
+        user_count = len(all_ids)
+        await message.answer(f'Рассылка завершена.\nВсего пользователей: {user_count}.\nУдалось отправить: {good_try}.\nНе удалось отправить: {user_count - good_try}.')
 
 #===================================================================================# Конец админ-панели
 
