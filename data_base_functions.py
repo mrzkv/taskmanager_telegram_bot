@@ -99,4 +99,11 @@ async def get_all_users_id():
     await connect.close()
     return all_ids
 
-#
+async def get_tasks_count():
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    all_tsks = await cursor.execute('SELECT COUNT(*) FROM tasks')
+    all_tsks = await all_tsks.fetchone()
+    await cursor.close()
+    await connect.close()
+    return all_tsks[0]

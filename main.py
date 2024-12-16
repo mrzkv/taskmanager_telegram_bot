@@ -6,14 +6,13 @@ from aiogram import types, F, Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from sys import exit
 from admin_functions import *
 from message_commands import *
 from bot_token import *
 
 dp = Dispatcher()
 print('Format of info about users is Full_name:tgID')
-
 
 
 #Запуск бота командой /start
@@ -31,9 +30,10 @@ async def start_bot(message: types.Message):
         ]]
 
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
     text_data = f"\n<b>Здравствуйте, {html.escape(message.from_user.full_name)}!</b>\nНиже кнопки которые вам понадобятся\n"
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+
 
 class Addtask(StatesGroup):
     addtask = State()
@@ -60,7 +60,7 @@ async def admin_list(callback: types.CallbackQuery):
 async def information(callback: types.CallbackQuery):
     kb = [[types.InlineKeyboardButton(text="Вернуться назад", callback_data="back_to_start")]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    text_data = '1. Запуск первой адекватной бета-версии: 13.12.2024\n2. Конец бета-версии 14.12.24'
+    text_data = '1. Запуск первой адекватной бета-версии: 13.12.2024\n2. Конец бета-версии 14.12.2024\n3. Запуск бота 15.12.2024!'
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
 # Возвращение пользователя в начальное меню
@@ -128,7 +128,7 @@ async def f_add_task_step_2(message: types.Message, state: FSMContext):
     msg = message.text
     user_id = message.from_user.id
     await add_task_to_database(msg, user_id)
-    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
     text_data = f'Ваша задача <b>"{html.escape(msg)}"</b> была добавлена. Чтобы увидеть список задач нажмите кнопку ниже.'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
@@ -154,7 +154,7 @@ async def f_del_task_step_2(message: types.Message, state: FSMContext):
             text_data += ". Воспользуйтесь кнопкой ниже"
     elif not task_id:
         text_data = f'Чтобы удалить задачу нужно ввести её номер, вы же ввели: {msg}'
-    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
 #=====================================================================================# Конец кода основанного на F.Data
@@ -206,19 +206,19 @@ async def get_clist(message: types.Message):
 async def enter_admin_menu(message:types.Message):
     if await isAdmin(message.from_user.id):
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text='Войти в админ меню', callback_data='admin_menu')]])
-        photo_data, text_data = 'AgACAgIAAxkBAAIDQGddvnuopuYcJgHfzNGmBDCHFO2ZAAJH5zEbz43oStTOu4SkTrHEAQADAgADeQADNgQ', 'Войти в Админ-меню'
+        photo_data, text_data = 'AgACAgIAAxkBAANAZ16z_DQyrRo2TsAd2JAaz1xasBkAArbnMRtSjflKegOH29qOjb4BAAMCAAN5AAM2BA', 'Войти в Админ-меню'
         await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
     else:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')]])
         text_data = await wrong_admin(message.from_user.id, message.text, message.from_user.username)
-        photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+        photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
         await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'admin_menu')
 async def administration_menu(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     if await isAdmin(callback.from_user.id):
-        kb = [[types.InlineKeyboardButton(text='Статистика', callback_data='admin_stats'), types.InlineKeyboardButton(text='Рассылка', callback_data='admin_news')]]
+        kb = [[types.InlineKeyboardButton(text='Статистика', callback_data='admin_stats'), types.InlineKeyboardButton(text='Рассылка', callback_data='admin_news'), types.InlineKeyboardButton(text='Остановка бота', callback_data='admin_stop')]]
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
         text_data = f'Здравствуйте, администратор <b>{html.escape(callback.from_user.full_name)}</b>.'
         await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
@@ -254,6 +254,36 @@ async def admin_newsletter_step2(message: types.Message, state: FSMContext):
         user_count = len(all_ids)
         await message.answer(f'Рассылка завершена.\nВсего пользователей: {user_count}.\nУдалось отправить: {good_try}.\nНе удалось отправить: {user_count - good_try}.')
 
+@dp.callback_query( F.data == 'admin_stop')
+async def admin_stop_bot(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    if await isAdmin(callback.from_user.id):
+        kb = [
+            [types.InlineKeyboardButton(text='Вернуться назад', callback_data='admin_menu')],
+            [types.InlineKeyboardButton(text='Остановить бота.', callback_data='server_stop')]
+        ]
+        keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
+        text_data = f'Вы уверены, что хотите остановить бота? Данное действие нельзя отменить'
+        await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'server_stop')
+async def server_stop_bot(callback: types.CallbackQuery):
+    if await isAdmin(callback.from_user.id):
+        await callback.message.edit_caption(caption='Бот будет остановлен через 5 секунд')
+        await sleep(1)
+        await callback.message.edit_caption(caption='<b>4</b>')
+        await sleep(1)
+        await callback.message.edit_caption(caption='<b>3</b>')
+        await sleep(1)
+        await callback.message.edit_caption(caption='<b>2</b>')
+        await sleep(1)
+        await callback.message.edit_caption(caption='<b>1</b>')
+        await sleep(1)
+        await callback.message.edit_caption(caption='<b>Остановка бота.</b>')
+        await exit()
+
+
+
 #===================================================================================# Конец админ-панели
 
 # Если была введена неверная команда.
@@ -263,14 +293,13 @@ async def wrong_command(message: types.Message):
     kb = [[types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')]]
     text_data = f'Введенной вами команды "{msg}" - не существует\nНажав на кнопку ниже вы увидете доступные команды'
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-    photo_data = 'AgACAgIAAxkBAANfZ1cpKZtmA3d5-GKxdt9eZfvaT5AAAqDnMRtq4sBKjGpk29o6-AwBAAMCAAN5AAM2BA'
+    photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
     await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
-
 # Запуск бота
 async def main():
-    print('Введите пароль от бота')
-    token_of_bot = await get_token(input())
+    token_of_bot = await get_token()
     bot = Bot(token=token_of_bot, default=DefaultBotProperties(parse_mode=ParseMode.HTML)) # API бота
     await dp.start_polling(bot)
+
 if __name__ == "__main__":
     run( main() )
