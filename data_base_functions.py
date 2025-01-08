@@ -1,4 +1,11 @@
+import asyncio
+from aiogram.types import InlineKeyboardButton
+from aiogram import types
 import aiosqlite
+import html
+
+from flask.helpers import get_root_path
+
 
 # Функция для получения списка завершенных задач из базы данных. Вызывается командой /clist
 async def get_completed_task_list(user_id):
@@ -43,6 +50,7 @@ async def add_user_to_data_base(user_id, full_name, username):
         print(f"{full_name}:{user_id} added to data base.")
         await connect.commit()
     await cursor.close()
+    await connect.close()
 
 
 # Маркировка задачи как завершенная
@@ -107,3 +115,96 @@ async def get_tasks_count():
     await cursor.close()
     await connect.close()
     return all_tsks[0]
+
+async def check_group_name(name):
+
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    current_group_name = await cursor.execute('SELECT * FROM groups WHERE name = ?', (name,))
+    current_group_name = await current_group_name.fetchone()
+    await cursor.close()
+    await connect.close()
+    if current_group_name is None:
+        return True
+    else:
+        return False
+
+
+
+async def create_group_db(name, creator):
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    await cursor.execute('INSERT INTO groups (name, creator) VALUES (?, ?)',
+                         (name, creator))
+    await cursor.close()
+    await connect.commit()
+    await connect.close()
+
+async def get_kb_for_user_group(id):
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    group_list = await cursor.execute('SELECT name FROM group_participants WHERE participant = ? ORDER BY id ASC', (id,))
+    group_list = await group_list.fetchall()
+    await cursor.close()
+    await connect.close()
+    if not group_list:
+        return False
+    else:
+        kb = []
+        len_grplist = len(group_list)
+        len_grplist2 = len_grplist
+        for i in range(0,len_grplist2,3):
+            if len_grplist >= 3:
+                len_grplist -= 3
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]), callback_data=html.escape(f'usergroup-{group_list[i][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+1][0]), callback_data=html.escape(f'usergroup-{group_list[i+1][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+2][0]), callback_data=html.escape(f'usergroup-{group_list[i+2][0]}'))])
+                continue
+            elif len_grplist == 2:
+                len_grplist -= 2
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]),callback_data=html.escape(f'usergroup-{group_list[i][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+1][0]), callback_data=html.escape(f'usergroup-{group_list[i+1][0]}'))])
+                continue
+            else:
+                len_grplist -= 1
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]),callback_data=html.escape(f'usergroup-{group_list[i][0]}'))])
+                continue
+        return kb
+
+
+async def get_kb_for_creator_groups(id):
+    connect = await aiosqlite.connect('users.db')
+    cursor = await connect.cursor()
+    group_list = await cursor.execute('SELECT name FROM groups WHERE creator = ? ORDER BY id ASC', (id,))
+    group_list = await group_list.fetchall()
+    await cursor.close()
+    await connect.close()
+    if group_list == []:
+        return False
+    else:
+        kb = []
+        len_grplist = len(group_list)
+        len_grplist2 = len_grplist
+        for i in range(0,len_grplist2,3):
+            if len_grplist >= 3:
+                len_grplist -= 3
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]), callback_data=html.escape(f'ownergroup-{group_list[i][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+1][0]), callback_data=html.escape(f'ownergroup-{group_list[i+1][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+2][0]), callback_data=html.escape(f'ownergroup-{group_list[i+2][0]}'))])
+                continue
+            elif len_grplist == 2:
+                len_grplist -= 2
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]),callback_data=html.escape(f'ownergroup-{group_list[i][0]}')),
+                     types.InlineKeyboardButton(text=html.escape(group_list[i+1][0]), callback_data=html.escape(f'ownergroup-{group_list[i+1][0]}'))])
+                continue
+            else:
+                len_grplist -= 1
+                kb.append(
+                    [types.InlineKeyboardButton(text=html.escape(group_list[i][0]),callback_data=html.escape(f'ownergroup-{group_list[i][0]}'))])
+                continue
+        return kb

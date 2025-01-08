@@ -1,4 +1,7 @@
+import html
 from asyncio import run, sleep
+from idlelib.editor import keynames
+
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
@@ -87,29 +90,49 @@ async def main_menu(callback: types.CallbackQuery, state: FSMContext):
     kb = [
         [types.InlineKeyboardButton(text='Вернуться в начало', callback_data='back_to_start'), types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')],
         [types.InlineKeyboardButton(text='Создать задачу', callback_data='create_task'), types.InlineKeyboardButton(text='Завершить задачу', callback_data='delete_task')],
-        [types.InlineKeyboardButton(text='Список ваших задач', callback_data='list_of_active_tasks'), types.InlineKeyboardButton(text='Список завершенных задач', callback_data='list_of_completed_tasks')]
+        [types.InlineKeyboardButton(text='Списки задач', callback_data='list_of_tasks'), types.InlineKeyboardButton(text='Группы', callback_data='group_menu')]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     text_data = f'Вы находитесь в меню, ниже кнопки для удобной навигации'
     await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
 
+@dp.callback_query( F.data == "group_menu")
+async def f_group_menu(callback: types.CallbackQuery):
+    kb = [
+        [types.InlineKeyboardButton(text='Создать группу', callback_data='create_group'), types.InlineKeyboardButton(text='Группы с вами', callback_data='group_list')],
+        [types.InlineKeyboardButton(text='Ваши группы', callback_data='group_creator_list'), types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]
+          ]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    text_data = f'Вы находитесь в меню групп'
+    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'list_of_tasks')
+async def f_list_of_tasks(callback: types.CallbackQuery):
+    kb = [
+        [types.InlineKeyboardButton(text='Активные задачи',callback_data='list_of_active_tasks'), types.InlineKeyboardButton(text='Завершенные задачи',callback_data='list_of_completed_tasks')],
+        [types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]
+    ]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    text_data=f'Вы находитесь в меню списков задач'
+    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
 @dp.callback_query( F.data == "list_of_completed_tasks")
 async def f_list_of_completed_tasks(callback: types.CallbackQuery):
-    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='list_of_tasks')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     user_id = callback.from_user.id
     text_data = await list_of_completed_tasks(user_id)
-    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+    await callback.message.edit_caption(caption=html.escape(text_data), reply_markup=keyboard)
 
 
 @dp.callback_query( F.data == 'list_of_active_tasks')
 async def f_list_of_active_tasks(callback: types.CallbackQuery):
-    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]]
+    kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='list_of_tasks')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     user_id = callback.from_user.id
     tasks = await get_active_task_list(user_id)
     text_data = await get_task_list(tasks)
-    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+    await callback.message.edit_caption(caption=html.escape(text_data), reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'create_task')
 async def f_add_task(callback: types.CallbackQuery, state: FSMContext):
@@ -155,7 +178,7 @@ async def f_del_task_step_2(message: types.Message, state: FSMContext):
     elif not task_id:
         text_data = f'Чтобы удалить задачу нужно ввести её номер, вы же ввели: {msg}'
     photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
-    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+    await message.answer_photo(photo=photo_data, caption=html.escape(text_data), reply_markup=keyboard)
 
 #=====================================================================================# Конец кода основанного на F.Data
 
@@ -171,7 +194,7 @@ async def add_task(message: types.Message):
     msg = html.escape(message.text)
     user_id = message.from_user.id
     text_data = await add_task_to_list(msg, user_id)
-    await message.answer(text_data)
+    await message.answer(html.escape(text_data))
 
 # Получение списка задач
 @dp.message( Command ('list') )
@@ -179,7 +202,7 @@ async def get_list(message: types.Message):
     user_id = message.from_user.id
     tasks = await get_active_task_list(user_id)
     text_data = await get_task_list(tasks)
-    await message.answer(text=text_data)
+    await message.answer(html.escape(text_data))
 
 # Завершение задачи
 @dp.message( Command( 'del' ) )
@@ -188,7 +211,7 @@ async def del_task(message: types.Message):
     msg = html.escape(message.text)
     user_id = message.from_user.id
     text_data = await delete_task_from_task_list(msg, user_id)
-    await message.answer(text_data)
+    await message.answer(html.escape(text_data))
 
 # Получение списка выполненных задач
 @dp.message( Command ('Clist') )
@@ -196,7 +219,7 @@ async def del_task(message: types.Message):
 async def get_clist(message: types.Message):
     user_id = message.from_user.id
     text_data = await list_of_completed_tasks(user_id)
-    await message.answer(text_data)
+    await message.answer(html.escape(text_data))
 
 #===================================================================================# Конец кода основанного на командах
 
@@ -212,7 +235,7 @@ async def enter_admin_menu(message:types.Message):
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')]])
         text_data = await wrong_admin(message.from_user.id, message.text, message.from_user.username)
         photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
-        await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+        await message.answer_photo(photo=photo_data, caption=html.escape(text_data), reply_markup=keyboard)
 
 @dp.callback_query( F.data == 'admin_menu')
 async def administration_menu(callback: types.CallbackQuery, state: FSMContext):
@@ -282,19 +305,104 @@ async def server_stop_bot(callback: types.CallbackQuery):
         await callback.message.edit_caption(caption='<b>Остановка бота.</b>')
         await exit()
 
-
-
 #===================================================================================# Конец админ-панели
+
+#===================================================================================# Группы
+class addGroup(StatesGroup):
+    newGroup = State()
+
+
+@dp.callback_query( F.data == 'create_group')
+async def create_group(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(addGroup.newGroup)
+    kb = [
+        [types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
+    text_data = 'Введите название группы.'
+    await callback.message.edit_caption(caption=text_data, reply_markup=keyboard)
+
+@dp.message(addGroup.newGroup)
+async def create_group_step2(message: types.Message, state: FSMContext):
+    await state.clear()
+    photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
+    msg = await isvalidname(message.text, 'vgroup')
+    if msg is False:
+        text_data = 'В название допускаются русские или английские буквы и цифры, а также пробелы'
+        kb = [
+            [types.InlineKeyboardButton(text='Ввести другое имя', callback_data='create_group'),
+             types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]
+        ]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+        return None
+    if await isvalidname(msg, 'group'):
+        kb = [
+            [types.InlineKeyboardButton(text='Ваши группы', callback_data='group_creator_list'),types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')]
+        ]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        text_data = f'Группа с именем "{html.escape(msg)}" была создана.'
+        await create_group_db(msg, message.from_user.id)
+        await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+    else:
+        kb = [
+            [types.InlineKeyboardButton(text='Ввести другое имя', callback_data='create_group'),
+             types.InlineKeyboardButton(text='Вернуться назад', callback_data='main_menu')]
+        ]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        text_data = 'Такая группа уже существует'
+
+        await message.answer_photo(photo=photo_data,caption=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'group_creator_list')
+async def get_group_creator_list_for_user(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    kb = await get_kb_for_creator_groups(callback.from_user.id)
+    if kb == False:
+        kb = [[types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')]]
+        text_data = 'У вас нету групп'
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await callback.message.edit_caption(text=text_data, reply_markup=keyboard)
+        return None
+    else:
+        text_data = 'Ваши группы'
+        kb.append([types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')])
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    await callback.message.edit_caption(text=text_data, reply_markup=keyboard)
+
+@dp.callback_query( F.data == 'group_list')
+async def get_group_list_for_user(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    kb = await get_kb_for_user_group(callback.from_user.id)
+    if kb is False:
+        text_data = 'Вы не состоите в группах'
+        kb = [
+            [types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')]
+        ]
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await callback.message.edit_caption(caption=html.escape(text_data), reply_markup=keyboard)
+        return None
+    else:
+        text_data = 'Вы состоите в группах -'
+        kb.append([types.InlineKeyboardButton(text='Вернуться назад', callback_data='group_menu')])
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await callback.message.edit_caption(caption=html.escape(text_data), reply_markup=keyboard)
+        return None
+
+#===================================================================================# Конец групп
+
+
+
 
 # Если была введена неверная команда.
 @dp.message(F.text[0] == '/')
 async def wrong_command(message: types.Message):
     msg = message.text
     kb = [[types.InlineKeyboardButton(text='Команды бота', callback_data='commands_of_bot')]]
-    text_data = f'Введенной вами команды "{msg}" - не существует\nНажав на кнопку ниже вы увидете доступные команды'
+    text_data = f'Введенной вами команды "{msg}" - не существует\nНажав на кнопку ниже вы увидите доступные команды'
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
     photo_data = 'AgACAgIAAxkBAAM-Z16z72hLzyrNHk2HcW1004sAAc77AAJw5zEbQijxSkRj7ont7ywxAQADAgADeQADNgQ'
-    await message.answer_photo(photo=photo_data, caption=text_data, reply_markup=keyboard)
+    await message.answer_photo(photo=photo_data, caption=html.escape(text_data), reply_markup=keyboard)
 # Запуск бота
 async def main():
     token_of_bot = await get_token()

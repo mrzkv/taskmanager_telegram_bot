@@ -1,5 +1,5 @@
 import re
-
+from data_base_functions import check_group_name
 # Валидация данных.
 async def isvalid(command, type_of_command):
     command = str(command)
@@ -28,6 +28,22 @@ async def isvalid(command, type_of_command):
     elif type_of_command == 'fdelete':
         if command.isdigit():
             return command
+        else:
+            return False
+    else:
+        return False
+
+async def isvalidname(name, type_of_name):
+    # Проверка название группы
+    if type_of_name == 'group':
+        if await check_group_name(name):
+            return True
+        return False
+    if type_of_name == 'vgroup':
+        name = str(name)
+        vname = name.replace(' ', '')
+        if vname.isalnum():
+            return name
         else:
             return False
     else:

@@ -26,11 +26,10 @@ async def add_task_to_list(msg, user_id):
 
 async def get_task_list(tasks):
     if len(tasks) != 0:
-        string_tasks = '<b>'
+        string_tasks = ''
         for i in range(len(tasks)):
             string_tasks += f'{i+1}. {tasks[i]}'
             string_tasks += '\n'
-        string_tasks += '</b>'
         text_data = f'Список ваших задач:\n{string_tasks}'
     else:
         text_data = 'Ваш список задач пуст. Вы можете создать новую используя /add.\nЛибо использовать кнопки'
@@ -43,11 +42,10 @@ async def list_of_completed_tasks(user_id):
     if len(list_of_completed) == 0:
         text_data = f"Ваш список завершенных задач пуст.\nЧтобы завершить задачу можете воспользоваться:\n/del <b>{html.escape('<Номер задачи>')}</b> или /compelte <b>{html.escape('<Номер задачи>')}</b>"
     else:
-        string_tasks = '<b>'
+        string_tasks = ''
         for i in range(len(list_of_completed)):
             string_tasks += f'{i + 1}. {list_of_completed[i]}'
             string_tasks += '\n'
-        string_tasks += '</b>'
         text_data = f'Список ваших завершенных задач:\n{string_tasks}'
     return text_data
 
